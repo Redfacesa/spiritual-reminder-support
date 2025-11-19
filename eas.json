@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 16.27.0",
+    "version": ">= 13.0.0",
     "appVersionSource": "remote"
   },
   "build": {
@@ -16,6 +16,12 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "manacekapinga@icloud.com",
+        "ascAppId": "6755479015",
+        "appleTeamId": "2CCRKT2HCQ"
+      }
+    }
   }
 }
