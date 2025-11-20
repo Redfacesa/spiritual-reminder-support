@@ -2,14 +2,14 @@
   "expo": {
     "name": "Prayer Reminder & Spiritual Guide",
     "slug": "spiritual-reminder-support",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "spiritual-reminder-support",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.prayer_reminder.app",
+      "bundleIdentifier": "com.prayerreminder.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -19,7 +19,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.prayerreminder.app"
     },
     "web": {
       "bundler": "metro",
