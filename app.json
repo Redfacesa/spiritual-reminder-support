@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.prayerreminder.app",
+      "bundleIdentifier": "com.prayer.reminder.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
