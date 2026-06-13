@@ -7,9 +7,18 @@
 -- show pictures via a plain URL.
 -- =====================================================================
 
-insert into storage.buckets (id, name, public)
-values ('profilepic', 'profilepic', true)
-on conflict (id) do update set public = true;
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'profilepic',
+  'profilepic',
+  true,
+  5242880, -- 5 MB
+  array['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/heic', 'image/heif']
+)
+on conflict (id) do update set
+  public = true,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
 
 -- Anyone can view profile pictures (public).
 drop policy if exists "profilepic_public_read" on storage.objects;
