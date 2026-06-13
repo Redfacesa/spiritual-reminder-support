@@ -64,7 +64,7 @@ export default function ProfileScreen() {
           <View style={styles.avatar}>
             <Ionicons name="person" size={42} color={colors.primary} />
           </View>
-          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.name}>{name || 'Friend'}</Text>
           <View style={[styles.planBadge, isPro ? styles.proBadge : styles.freeBadge]}>
             {isPro && <Ionicons name="star" size={12} color={colors.gold} />}
             <Text style={[styles.planBadgeText, isPro && { color: colors.gold }]}>

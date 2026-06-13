@@ -50,9 +50,20 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+// Best-effort display name from the auth user (used until the profile loads,
+// and as a sensible default so the greeting is never a hardcoded placeholder).
+function deriveNameFromUser(user: { email?: string | null; user_metadata?: Record<string, any> } | null): string {
+  if (!user) return '';
+  const meta = user.user_metadata ?? {};
+  const fromMeta = meta.display_name || meta.full_name || meta.name;
+  if (fromMeta) return String(fromMeta);
+  if (user.email) return user.email.split('@')[0];
+  return '';
+}
+
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const { userId } = useAuth();
-  const [name, setNameState] = useState('Manace');
+  const { userId, user } = useAuth();
+  const [name, setNameState] = useState('');
   const [faith, setFaithState] = useState('christianity');
   const [plan, setPlanState] = useState<PlanId>('free');
   const [notificationsEnabled, setNotificationsEnabledState] = useState(true);
@@ -63,10 +74,23 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const isPro = plan === 'pro';
 
-  // Hydrate from Supabase when a user signs in.
+  // Hydrate from Supabase when a user signs in; clear everything on sign-out so
+  // no data bleeds between accounts on the same device.
   useEffect(() => {
     let cancelled = false;
-    if (!userId) return;
+    if (!userId) {
+      setNameState('');
+      setFaithState('christianity');
+      setPlanState('free');
+      setNotificationsEnabledState(true);
+      setReminderSoundState(true);
+      setDailyVerseEnabledState(true);
+      setSavedVerses([]);
+      setAiMessagesToday(0);
+      return;
+    }
+    // Immediate per-user fallback so the greeting is personalised right away.
+    setNameState(deriveNameFromUser(user));
     (async () => {
       const [profile, settings, planId, verses, aiToday] = await Promise.all([
         fetchProfile(userId),
@@ -92,7 +116,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, user]);
 
   const setName = useCallback(
     (value: string) => {

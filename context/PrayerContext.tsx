@@ -35,39 +35,28 @@ const PrayerContext = createContext<PrayerContextType | undefined>(undefined);
 
 const todayISO = () => new Date().toISOString().split('T')[0];
 
-const seed = (): Prayer[] => [
-  { id: '1', topic: 'Business Growth', faith: 'christianity', reminderTime: '18:00', date: todayISO(), status: 'active', recurring: true, createdAt: '2025-06-01' },
-  { id: '2', topic: 'Family Harmony', faith: 'islam', reminderTime: '12:00', date: todayISO(), status: 'active', recurring: true, createdAt: '2025-06-02' },
-  { id: '3', topic: 'Health and Healing', faith: 'judaism', reminderTime: '09:00', date: todayISO(), status: 'active', createdAt: '2025-06-03' },
-  { id: '4', topic: 'Career Guidance', faith: 'christianity', reminderTime: '07:00', date: '2025-06-05', status: 'answered', createdAt: '2025-05-20' },
-  { id: '5', topic: 'Inner Peace', faith: 'buddhism', reminderTime: '06:00', date: todayISO(), status: 'active', recurring: true, createdAt: '2025-06-04' },
-  { id: '6', topic: 'Wisdom and Clarity', faith: 'hinduism', reminderTime: '05:30', date: '2025-06-06', status: 'completed', createdAt: '2025-06-01' },
-  { id: '7', topic: 'Gratitude Practice', faith: 'general', reminderTime: '20:00', date: todayISO(), status: 'active', recurring: true, createdAt: '2025-06-05' },
-  { id: '8', topic: 'Relationship Healing', faith: 'christianity', reminderTime: '19:00', date: '2025-06-04', status: 'archived', createdAt: '2025-05-15' },
-];
-
-// A simple streak: count of consecutive days (ending today) that have at least
-// one completed/answered prayer logged. With seed data this is illustrative.
+// Real streak: number of consecutive days (ending today) that have at least one
+// completed/answered prayer. A not-yet-completed today does not break the streak.
 function computeStreak(prayers: Prayer[]): number {
   const doneDates = new Set(
     prayers.filter((p) => p.status === 'completed' || p.status === 'answered').map((p) => p.date)
   );
+  if (doneDates.size === 0) return 0;
   let streak = 0;
   const cursor = new Date();
-  // Allow up to a 1-year look-back.
   for (let i = 0; i < 365; i++) {
     const iso = cursor.toISOString().split('T')[0];
     if (doneDates.has(iso)) {
       streak += 1;
       cursor.setDate(cursor.getDate() - 1);
     } else if (i === 0) {
-      // No completion today yet — keep a friendly baseline streak of 7 for demo.
+      // Nothing completed today yet — look at yesterday before breaking.
       cursor.setDate(cursor.getDate() - 1);
     } else {
       break;
     }
   }
-  return streak || 7;
+  return streak;
 }
 
 // Maps a prayer id -> scheduled notification id so we can cancel it later.
@@ -76,14 +65,13 @@ const notifIds = new Map<string, string>();
 export const PrayerProvider = ({ children }: { children: ReactNode }) => {
   const { userId } = useAuth();
   const { notificationsEnabled, reminderSound } = useUser();
-  const [prayers, setPrayers] = useState<Prayer[]>(seed());
+  const [prayers, setPrayers] = useState<Prayer[]>([]);
 
-  // When the signed-in user changes, load their cloud prayers. Signing out
-  // falls back to the local demo data.
+  // Load the signed-in user's cloud prayers. Signing out clears everything.
   useEffect(() => {
     let cancelled = false;
     if (!userId) {
-      setPrayers(seed());
+      setPrayers([]);
       return;
     }
     fetchPrayers().then((remote) => {

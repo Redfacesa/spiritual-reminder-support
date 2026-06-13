@@ -70,7 +70,7 @@ export default function HomeScreen() {
         <View style={styles.welcomeWrap}>
           <View style={styles.welcomeCard}>
             <Text style={styles.greeting}>{greeting()},</Text>
-            <Text style={styles.name}>{name}</Text>
+            <Text style={styles.name}>{name || 'Friend'}</Text>
             <View style={styles.statRow}>
               <View style={styles.statPill}>
                 <Text style={styles.statEmoji}>🔥</Text>

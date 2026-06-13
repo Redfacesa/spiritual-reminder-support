@@ -64,15 +64,18 @@ export default function WebFooter() {
 
           {/* Contact */}
           <View style={styles.linkCol}>
-            <Text style={styles.colHeading}>Company</Text>
+            <Text style={styles.colHeading}>Contact</Text>
+            <TouchableOpacity onPress={() => open('mailto:support@prayerreminder.site')} activeOpacity={0.7}>
+              <Text style={styles.link}>support@prayerreminder.site</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => open('mailto:billing@prayerreminder.site')} activeOpacity={0.7}>
+              <Text style={styles.link}>billing@prayerreminder.site</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => open('tel:+27617780990')} activeOpacity={0.7}>
+              <Text style={styles.link}>+27 61 778 0990</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => open('https://www.redface.in')} activeOpacity={0.7}>
               <Text style={styles.link}>www.redface.in</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => open('mailto:redfacesa@gmail.com')} activeOpacity={0.7}>
-              <Text style={styles.link}>redfacesa@gmail.com</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => open('/welcome/index.html')} activeOpacity={0.7}>
-              <Text style={styles.link}>About the app</Text>
             </TouchableOpacity>
           </View>
         </View>
