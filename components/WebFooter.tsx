@@ -32,9 +32,7 @@ export default function WebFooter() {
           {/* Brand / about */}
           <View style={styles.brandCol}>
             <View style={styles.brandRow}>
-              <View style={styles.mark}>
-                <Ionicons name="sparkles" size={18} color="#fff" />
-              </View>
+              <Image source={require('../assets/images/icon.png')} style={styles.mark} />
               <Text style={styles.brandName}>Prayer Reminder</Text>
             </View>
             <Text style={styles.brandText}>
@@ -111,9 +109,6 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 11,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   brandName: { color: '#fff', fontSize: 18, fontWeight: '800' },
   brandText: { color: '#9CA0B8', fontSize: 14, lineHeight: 21, maxWidth: 360 },

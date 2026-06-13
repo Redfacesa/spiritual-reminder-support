@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useUser } from '../context/UserContext';
 import { useAuth } from '../context/AuthContext';
+import AuthModal from '../components/AuthModal';
 import { FAITH_TRADITIONS } from '../constants/faithData';
 import { requestPermissions } from '../utils/notificationHelper';
 import { colors, radius, shadow, spacing } from '../constants/theme';
@@ -23,7 +24,7 @@ import { colors, radius, shadow, spacing } from '../constants/theme';
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, signOut, configured } = useAuth();
   const {
     name,
     setName,
@@ -38,6 +39,7 @@ export default function SettingsScreen() {
   } = useUser();
 
   const [draftName, setDraftName] = useState(name);
+  const [authVisible, setAuthVisible] = useState(false);
 
   const saveName = () => {
     const trimmed = draftName.trim();
@@ -160,14 +162,30 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             </>
           ) : (
-            <Row icon="cloud-offline" tint={colors.textMuted} label="Not signed in">
-              <Text style={styles.value}>Local only</Text>
-            </Row>
+            <>
+              <Row icon="cloud-offline" tint={colors.textMuted} label="Not signed in">
+                <Text style={styles.value}>{configured ? 'Sync off' : 'Local only'}</Text>
+              </Row>
+              {configured && (
+                <>
+                  <Divider />
+                  <TouchableOpacity style={styles.rowBtn} onPress={() => setAuthVisible(true)}>
+                    <View style={[styles.rowIcon, { backgroundColor: colors.primaryLight }]}>
+                      <Ionicons name="log-in-outline" size={18} color={colors.primary} />
+                    </View>
+                    <Text style={[styles.rowLabel, { color: colors.primary }]}>Sign in / Create account</Text>
+                    <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
+                  </TouchableOpacity>
+                </>
+              )}
+            </>
           )}
         </View>
 
         <Text style={styles.footer}>Prayer Reminder & Spiritual Guide · v1.0.0</Text>
       </ScrollView>
+
+      <AuthModal visible={authVisible} onClose={() => setAuthVisible(false)} />
     </View>
   );
 }
