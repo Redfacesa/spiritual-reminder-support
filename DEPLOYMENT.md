@@ -17,14 +17,16 @@ Set them for **Production** and **Preview**:
 EXPO_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-or-publishable-key
 EXPO_PUBLIC_PAYSTACK_PUBLIC_KEY=your-paystack-public-key
-EXPO_PUBLIC_PROXY_URL=https://api.your-real-domain.com
+EXPO_PUBLIC_PROXY_URL=/api
 ```
 
 These are safe to expose to the browser because they are public client values.
 
 Important: Expo only includes environment variables that start with `EXPO_PUBLIC_` in the web/mobile bundle. Variables named `SUPABASE_URL` or `PAYSTACK_PUBLIC_KEY` without the prefix will not be available to the web app.
 
-`EXPO_PUBLIC_PROXY_URL` must be the real public URL of your deployed `server/` proxy. Do not use `localhost`, `127.0.0.1`, or `https://your-public-proxy-domain.com` in Vercel production; the AI Guide, sermon transcription, and subscription cancellation call this URL from the browser.
+For the Vercel deployment in this repo, use `EXPO_PUBLIC_PROXY_URL=/api`. That makes the web app call Vercel functions like `/api/chat` on the same domain.
+
+Do not use `localhost`, `127.0.0.1`, or `https://your-public-proxy-domain.com` in Vercel production; the AI Guide, sermon transcription, and subscription cancellation call this URL from the browser.
 
 After changing these values, redeploy on Vercel with **Use existing build cache** turned off.
 

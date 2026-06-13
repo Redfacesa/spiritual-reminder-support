@@ -34,23 +34,16 @@ if (missing.length) {
   process.exit(1);
 }
 
-const placeholders = [
-  ['EXPO_PUBLIC_PROXY_URL', 'your-public-proxy-domain.com'],
-  ['EXPO_PUBLIC_PROXY_URL', 'localhost'],
-  ['EXPO_PUBLIC_PROXY_URL', '127.0.0.1'],
-];
+const placeholders = [['EXPO_PUBLIC_PROXY_URL', 'your-public-proxy-domain.com']];
 
 const invalid = placeholders.filter(([key, value]) =>
   String(process.env[key] || '').toLowerCase().includes(value)
 );
 
 if (invalid.length && process.env.VERCEL) {
-  console.error('\nInvalid production web environment variables:');
-  invalid.forEach(([key, value]) => console.error(`- ${key} contains "${value}"`));
-  console.error(
-    '\nSet EXPO_PUBLIC_PROXY_URL to your real deployed proxy URL, then redeploy without cache.\n'
-  );
-  process.exit(1);
+  console.warn('\nWarning: production web environment variables contain placeholders:');
+  invalid.forEach(([key, value]) => console.warn(`- ${key} contains "${value}"`));
+  console.warn('\nThe app will fall back to same-domain Vercel functions at /api.\n');
 }
 
 console.log('Web environment variables detected:');

@@ -44,14 +44,17 @@ app.use(
   })
 );
 
-app.get('/health', (_req, res) => {
+function handleHealth(_req, res) {
   res.json({
     ok: true,
     model: XAI_MODEL,
     sttModel: XAI_STT_MODEL,
     paystack: Boolean(PAYSTACK_SECRET_KEY && SUPABASE_SERVICE_ROLE_KEY),
   });
-});
+}
+
+app.get('/health', handleHealth);
+app.get('/api/health', handleHealth);
 
 // ---------------------------------------------------------------------
 // Paystack webhook: on a successful charge, record the payment and flip
