@@ -191,32 +191,57 @@ function base64ToBytes(base64: string): Uint8Array {
   return bytes;
 }
 
+export interface AvatarUploadResult {
+  url?: string;
+  error?: string;
+}
+
 /**
- * Uploads a profile picture (provided as raw base64) to the user's folder in
- * the `avatars` bucket and saves the public URL on their profile. Returns the
- * public URL, or null on failure.
+ * Uploads a profile picture to the user's folder in the `profilepic` bucket and
+ * saves the public URL on their profile. Accepts the picked asset's base64
+ * (preferred / most reliable on native) and/or its uri (fallback, used on web
+ * when base64 isn't provided). Returns the public URL or a human error.
  */
 export async function uploadAvatar(
   userId: string,
-  base64: string,
+  source: { base64?: string | null; uri?: string | null },
   ext = 'jpg'
-): Promise<string | null> {
-  if (!supabase) return null;
+): Promise<AvatarUploadResult> {
+  if (!supabase) return { error: 'Sign in to upload a profile picture.' };
+
   try {
-    const bytes = base64ToBytes(base64);
+    let bytes: Uint8Array | null = null;
+
+    if (source.base64) {
+      bytes = base64ToBytes(source.base64);
+    } else if (source.uri) {
+      // Fallback (mainly web): read the picked file into bytes.
+      const resp = await fetch(source.uri);
+      const buf = await resp.arrayBuffer();
+      bytes = new Uint8Array(buf);
+    }
+
+    if (!bytes || bytes.byteLength === 0) {
+      return { error: 'Could not read the selected image.' };
+    }
+
     const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
     const path = `${userId}/avatar-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('profilepic')
       .upload(path, bytes, { contentType, upsert: true });
-    if (error) return null;
+    if (uploadError) {
+      console.warn('[avatar] upload failed', uploadError);
+      return { error: uploadError.message || 'Storage upload failed.' };
+    }
 
     const { data } = supabase.storage.from('profilepic').getPublicUrl(path);
     const url = data.publicUrl;
     await updateProfile(userId, { avatarUrl: url });
-    return url;
-  } catch {
-    return null;
+    return { url };
+  } catch (err: any) {
+    console.warn('[avatar] error', err);
+    return { error: err?.message || 'Unexpected error uploading image.' };
   }
 }
 

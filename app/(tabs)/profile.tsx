@@ -81,13 +81,15 @@ export default function ProfileScreen() {
         quality: 0.6,
         base64: true,
       });
-      if (result.canceled || !result.assets?.[0]?.base64) return;
+      if (result.canceled || !result.assets?.[0]) return;
       const asset = result.assets[0];
-      const ext = asset.uri.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
+      const ext = asset.uri.toLowerCase().endsWith('.png') || asset.mimeType === 'image/png' ? 'png' : 'jpg';
       setUploadingAvatar(true);
-      const ok = await setAvatar(asset.base64!, ext);
+      const res = await setAvatar({ base64: asset.base64, uri: asset.uri }, ext);
       setUploadingAvatar(false);
-      if (!ok) Alert.alert('Upload failed', 'Could not update your photo. Please try again.');
+      if (!res.ok) {
+        Alert.alert('Upload failed', res.error || 'Could not update your photo. Please try again.');
+      }
     } catch {
       setUploadingAvatar(false);
       Alert.alert('Something went wrong', 'Could not open your photos. Please try again.');

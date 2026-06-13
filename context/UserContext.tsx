@@ -28,7 +28,7 @@ interface UserContextType {
   faith: string;
   setFaith: (faith: string) => void;
   avatarUrl: string;
-  setAvatar: (base64: string, ext?: string) => Promise<boolean>;
+  setAvatar: (source: { base64?: string | null; uri?: string | null }, ext?: string) => Promise<{ ok: boolean; error?: string }>;
 
   plan: PlanId;
   isPro: boolean;
@@ -150,15 +150,15 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const setAvatar = useCallback(
-    async (base64: string, ext = 'jpg') => {
-      if (!userId) return false;
-      const url = await uploadAvatar(userId, base64, ext);
-      if (url) {
-        // Bust any cached image by keeping the unique timestamped URL.
-        setAvatarUrlState(url);
-        return true;
+    async (source: { base64?: string | null; uri?: string | null }, ext = 'jpg') => {
+      if (!userId) return { ok: false, error: 'Sign in to add a profile picture.' };
+      const result = await uploadAvatar(userId, source, ext);
+      if (result.url) {
+        // Unique timestamped URL also busts any image cache.
+        setAvatarUrlState(result.url);
+        return { ok: true };
       }
-      return false;
+      return { ok: false, error: result.error };
     },
     [userId]
   );
