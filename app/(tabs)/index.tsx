@@ -129,6 +129,7 @@ export default function HomeScreen() {
             <QuickAction icon="book" label="Read Scripture" tint="#0EA5E9" onPress={() => router.push('/(tabs)/library')} />
             <QuickAction icon="sparkles" label="Ask AI" tint={colors.accent} onPress={() => router.push('/(tabs)/guidance')} />
             <QuickAction icon="heart" label="My Prayers" tint="#EC4899" onPress={() => router.push('/(tabs)/prayers')} />
+            <QuickAction icon="calendar" label="Planner" tint="#22C55E" onPress={() => router.push('/planner')} />
           </View>
         </View>
 

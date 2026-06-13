@@ -111,6 +111,44 @@ export async function schedulePrayerReminder({
   }
 }
 
+/**
+ * Schedules a reminder that repeats weekly on a given weekday.
+ * weekday: 1 = Sunday ... 7 = Saturday (Expo convention).
+ * Returns the notification id, or null if it couldn't be scheduled.
+ */
+export async function scheduleWeeklyReminder({
+  topic,
+  weekday,
+  time,
+  sound = true,
+}: {
+  topic: string;
+  weekday: number;
+  time: string; // HH:MM
+  sound?: boolean;
+}): Promise<string | null> {
+  if (isWeb) return null;
+  const granted = await ensurePermission();
+  if (!granted) return null;
+
+  const [hours, minutes] = time.split(':').map((n) => parseInt(n, 10));
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+
+  try {
+    return await Notifications.scheduleNotificationAsync({
+      content: { title: 'Prayer Planner', body: topic, sound },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+        weekday,
+        hour: hours,
+        minute: minutes,
+      },
+    });
+  } catch {
+    return null;
+  }
+}
+
 export async function cancelNotification(notificationId: string): Promise<void> {
   if (isWeb || !notificationId) return;
   try {

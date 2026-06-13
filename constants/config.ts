@@ -9,4 +9,5 @@ export const PROXY_URL = (process.env.EXPO_PUBLIC_PROXY_URL ?? DEFAULT_PROXY_URL
 export const CHAT_ENDPOINT = `${PROXY_URL}/api/chat`;
 export const GUIDANCE_ENDPOINT = `${PROXY_URL}/api/guidance`;
 export const TRANSCRIBE_ENDPOINT = `${PROXY_URL}/api/transcribe`;
+export const CANCEL_SUBSCRIPTION_ENDPOINT = `${PROXY_URL}/api/cancel-subscription`;
 export const HEALTH_ENDPOINT = `${PROXY_URL}/health`;

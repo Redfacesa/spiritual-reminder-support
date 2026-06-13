@@ -22,6 +22,8 @@ import { useUser } from '../../context/UserContext';
 import { colors, radius, shadow, spacing } from '../../constants/theme';
 import { saveMessage, loadMessages, clearMessages, StoredMessage } from '../../db';
 import { clearAiMessages, fetchAiMessages, insertAiMessage } from '../../lib/repositories';
+import SubscriptionModal from '../../components/SubscriptionModal';
+import { FREE_AI_TRIAL_LIMIT } from '../../constants/subscription';
 
 const SUGGESTIONS = [
   'How do I overcome fear?',
@@ -39,6 +41,7 @@ export default function GuidanceScreen() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [faith, setFaith] = useState(userFaith || 'general');
+  const [showPaywall, setShowPaywall] = useState(false);
   const listRef = useRef<FlatList<StoredMessage>>(null);
 
   useEffect(() => {
@@ -74,10 +77,7 @@ export default function GuidanceScreen() {
     if (!trimmed || loading) return;
 
     if (outOfMessages) {
-      Alert.alert(
-        'Daily limit reached',
-        'You have used your free AI messages for today. Upgrade to Pro for unlimited guidance.',
-      );
+      setShowPaywall(true);
       return;
     }
 
@@ -194,7 +194,12 @@ export default function GuidanceScreen() {
         <View style={styles.headerTextWrap}>
           <Text style={styles.headerTitle}>AI Guide</Text>
           <Text style={styles.headerSubtitle}>
-            {isPro ? 'Pro · Unlimited' : `${aiMessagesRemaining} messages left today`} · {activeFaith?.name}
+            {isPro
+              ? 'Pro · Unlimited'
+              : aiMessagesRemaining > 0
+              ? `${aiMessagesRemaining} of ${FREE_AI_TRIAL_LIMIT} free messages left`
+              : 'Free trial used · Pro required'}{' '}
+            · {activeFaith?.name}
           </Text>
         </View>
         <TouchableOpacity onPress={handleClear} hitSlop={10} style={styles.clearBtn}>
@@ -249,31 +254,44 @@ export default function GuidanceScreen() {
         />
       )}
 
-      {outOfMessages && (
-        <View style={styles.limitBanner}>
-          <Ionicons name="lock-closed" size={15} color={colors.gold} />
-          <Text style={styles.limitText}>Daily free limit reached. Upgrade to Pro for unlimited.</Text>
+      {outOfMessages ? (
+        <TouchableOpacity
+          style={styles.upgradeBanner}
+          activeOpacity={0.85}
+          onPress={() => setShowPaywall(true)}
+        >
+          <Ionicons name="sparkles" size={18} color="#fff" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.upgradeTitle}>Unlock unlimited AI guidance</Text>
+            <Text style={styles.upgradeText}>
+              You've used your free messages. Go Pro for unlimited chat, prayer generation & the Planner.
+            </Text>
+          </View>
+          <View style={styles.upgradePill}>
+            <Text style={styles.upgradePillText}>Go Pro</Text>
+          </View>
+        </TouchableOpacity>
+      ) : (
+        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
+          <TextInput
+            style={styles.input}
+            value={input}
+            onChangeText={setInput}
+            placeholder="Ask anything..."
+            placeholderTextColor={colors.textFaint}
+            multiline
+          />
+          <TouchableOpacity
+            style={[styles.sendButton, (!input.trim() || loading) && styles.sendButtonDisabled]}
+            onPress={() => sendText(input)}
+            disabled={!input.trim() || loading}
+          >
+            {loading ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="send" size={18} color="#fff" />}
+          </TouchableOpacity>
         </View>
       )}
 
-      <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
-        <TextInput
-          style={styles.input}
-          value={input}
-          onChangeText={setInput}
-          placeholder="Ask anything..."
-          placeholderTextColor={colors.textFaint}
-          multiline
-          editable={!outOfMessages}
-        />
-        <TouchableOpacity
-          style={[styles.sendButton, (!input.trim() || loading || outOfMessages) && styles.sendButtonDisabled]}
-          onPress={() => sendText(input)}
-          disabled={!input.trim() || loading || outOfMessages}
-        >
-          {loading ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="send" size={18} color="#fff" />}
-        </TouchableOpacity>
-      </View>
+      <SubscriptionModal visible={showPaywall} onClose={() => setShowPaywall(false)} />
     </KeyboardAvoidingView>
   );
 }
@@ -332,15 +350,23 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   suggestionText: { fontSize: 14, color: colors.text, fontWeight: '500', flex: 1 },
-  limitBanner: {
+  upgradeBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.goldSoft,
+    gap: spacing.md,
+    backgroundColor: colors.primary,
     paddingHorizontal: spacing.lg,
-    paddingVertical: 10,
+    paddingVertical: spacing.lg,
   },
-  limitText: { fontSize: 13, color: '#9A7B00', fontWeight: '600', flex: 1 },
+  upgradeTitle: { fontSize: 15, fontWeight: '800', color: '#fff' },
+  upgradeText: { fontSize: 12, color: '#E4E4F7', marginTop: 2, lineHeight: 16 },
+  upgradePill: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+  },
+  upgradePillText: { fontSize: 13, fontWeight: '800', color: colors.primary },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',

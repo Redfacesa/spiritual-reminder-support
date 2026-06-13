@@ -138,6 +138,110 @@ app.post('/webhooks/paystack', handlePaystackWebhook);
 app.post('/api/webhook', handlePaystackWebhook);
 
 // ---------------------------------------------------------------------
+// Cancel subscription: an authenticated Pro user can disable their own
+// Paystack subscription in one tap. We verify the caller via their Supabase
+// access token (so nobody can cancel someone else's plan), disable any active
+// Paystack subscription for that email, then downgrade them to Free.
+// ---------------------------------------------------------------------
+const PAYSTACK_API = 'https://api.paystack.co';
+
+async function paystack(path, init = {}) {
+  return fetch(`${PAYSTACK_API}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      'Content-Type': 'application/json',
+      ...(init.headers || {}),
+    },
+  });
+}
+
+// Resolve the signed-in user's email from their Supabase access token.
+async function getUserEmailFromToken(token) {
+  if (!token || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${token}` },
+    });
+    if (!resp.ok) return null;
+    const user = await resp.json();
+    return user && user.email ? String(user.email) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Disable every active Paystack subscription belonging to a customer email.
+async function disablePaystackSubscriptions(email) {
+  let disabled = 0;
+  // 1) Look up the customer by email.
+  const custResp = await paystack(`/customer/${encodeURIComponent(email)}`);
+  if (!custResp.ok) return disabled; // no customer = nothing to cancel
+  const cust = await custResp.json();
+  const customerId = cust && cust.data && cust.data.id;
+  if (!customerId) return disabled;
+
+  // 2) List their subscriptions and disable the active ones.
+  const subsResp = await paystack(`/subscription?customer=${customerId}`);
+  if (!subsResp.ok) return disabled;
+  const subs = await subsResp.json();
+  const list = (subs && subs.data) || [];
+  for (const sub of list) {
+    if (sub.status !== 'active' && sub.status !== 'non-renewing') continue;
+    const r = await paystack('/subscription/disable', {
+      method: 'POST',
+      body: JSON.stringify({ code: sub.subscription_code, token: sub.email_token }),
+    });
+    if (r.ok) disabled += 1;
+  }
+  return disabled;
+}
+
+// Downgrade the user to Free in Supabase (service role bypasses RLS).
+async function downgradeToFree(email) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
+  const headers = {
+    apikey: SUPABASE_SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    'Content-Type': 'application/json',
+  };
+  const profResp = await fetch(
+    `${SUPABASE_URL}/rest/v1/profiles?email=eq.${encodeURIComponent(email)}&select=id`,
+    { headers }
+  );
+  if (!profResp.ok) return;
+  const profiles = await profResp.json();
+  const userId = profiles && profiles[0] && profiles[0].id;
+  if (!userId) return;
+  await fetch(`${SUPABASE_URL}/rest/v1/subscriptions?user_id=eq.${userId}`, {
+    method: 'PATCH',
+    headers: { ...headers, Prefer: 'return=minimal' },
+    body: JSON.stringify({ plan: 'free', status: 'canceled', updated_at: new Date().toISOString() }),
+  });
+}
+
+app.post('/api/cancel-subscription', async (req, res) => {
+  if (!PAYSTACK_SECRET_KEY) {
+    return res.status(503).json({ error: 'Billing is not configured on the server.' });
+  }
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  const email = await getUserEmailFromToken(token);
+  if (!email) {
+    return res.status(401).json({ error: 'Please sign in again to cancel your subscription.' });
+  }
+
+  try {
+    const disabled = await disablePaystackSubscriptions(email);
+    await downgradeToFree(email);
+    res.json({ ok: true, disabled });
+  } catch (err) {
+    console.error('[cancel] error', err);
+    res.status(500).json({ error: 'Could not cancel the subscription. Please email billing@prayerreminder.site.' });
+  }
+});
+
+// ---------------------------------------------------------------------
 // Speech-to-text: accepts a recorded sermon audio file and forwards it to
 // xAI STT. The app never sees the xAI key.
 // ---------------------------------------------------------------------

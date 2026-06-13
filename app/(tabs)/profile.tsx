@@ -150,6 +150,8 @@ export default function ProfileScreen() {
         {/* Spiritual tools */}
         <Text style={styles.sectionLabel}>Spiritual Tools</Text>
         <View style={styles.section}>
+          <SettingRow icon="calendar" tint={colors.primary} label="Prayer Planner" value={isPro ? undefined : 'Pro'} onPress={() => router.push('/planner')} />
+          <Divider />
           <SettingRow icon="mic" tint="#EC4899" label="Sermon Notes" value={isPro ? undefined : 'Pro'} onPress={() => router.push('/sermons')} />
           <Divider />
           <SettingRow icon="map" tint="#0EA5E9" label="Reading Plans" onPress={() => router.push('/(tabs)/library')} />

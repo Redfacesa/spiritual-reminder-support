@@ -25,6 +25,7 @@ export default function RootLayout() {
                   <Stack.Screen name="reading-plan" options={{ presentation: 'card' }} />
                   <Stack.Screen name="settings" options={{ presentation: 'card' }} />
                   <Stack.Screen name="sermons" options={{ presentation: 'card' }} />
+                  <Stack.Screen name="planner" options={{ presentation: 'card' }} />
                 </Stack>
               </AuthGate>
             </ReadingPlanProvider>

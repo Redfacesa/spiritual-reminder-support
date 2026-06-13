@@ -1,10 +1,13 @@
-import React, { useEffect } from 'react';
-import { View, Text, Modal, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Modal, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { PLANS, SUBSCRIPTION_LINKS, PlanId, getProPrice } from '../constants/subscription';
 import { useUser } from '../context/UserContext';
+import { cancelProSubscription } from '../lib/repositories';
 import { colors, radius, shadow, spacing } from '../constants/theme';
+
+const BILLING_EMAIL = 'billing@prayerreminder.site';
 
 interface SubscriptionModalProps {
   visible: boolean;
@@ -12,14 +15,35 @@ interface SubscriptionModalProps {
 }
 
 export default function SubscriptionModal({ visible, onClose }: SubscriptionModalProps) {
-  const { plan, setPlan, refreshSubscription } = useUser();
+  const { plan, isPro, setPlan, refreshSubscription } = useUser();
   const proPrice = getProPrice();
+
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [canceling, setCanceling] = useState(false);
 
   // When the sheet opens, pull the latest plan from Supabase so a Pro upgrade
   // completed on the Paystack page is reflected here.
   useEffect(() => {
     if (visible) refreshSubscription();
+    else setConfirmCancel(false);
   }, [visible, refreshSubscription]);
+
+  const handleCancel = async () => {
+    setCanceling(true);
+    const result = await cancelProSubscription();
+    setCanceling(false);
+    setConfirmCancel(false);
+    if (result.ok) {
+      setPlan('free');
+      await refreshSubscription();
+      Alert.alert('Subscription cancelled', 'You are back on the Free plan. You can resubscribe anytime.');
+    } else {
+      Alert.alert(
+        'Could not cancel automatically',
+        `${result.error ?? 'Something went wrong.'}\n\nEmail ${BILLING_EMAIL} and we will cancel it for you right away.`
+      );
+    }
+  };
 
   const openLink = async (url: string) => {
     try {
@@ -99,9 +123,47 @@ export default function SubscriptionModal({ visible, onClose }: SubscriptionModa
               );
             })}
 
-            <TouchableOpacity style={styles.manageLink} onPress={() => openLink(SUBSCRIPTION_LINKS.manage)}>
-              <Text style={styles.manageText}>Manage existing subscription</Text>
-            </TouchableOpacity>
+            {isPro ? (
+              <View style={styles.cancelBox}>
+                {!confirmCancel ? (
+                  <TouchableOpacity style={styles.cancelLink} onPress={() => setConfirmCancel(true)}>
+                    <Ionicons name="close-circle-outline" size={16} color={colors.textMuted} />
+                    <Text style={styles.cancelText}>Cancel subscription</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.confirmWrap}>
+                    <Text style={styles.confirmTitle}>Cancel your Pro subscription?</Text>
+                    <Text style={styles.confirmText}>
+                      You'll keep Pro until the end of your current billing period, then move to Free. No further charges.
+                    </Text>
+                    <View style={styles.confirmRow}>
+                      <TouchableOpacity
+                        style={[styles.confirmBtn, styles.keepBtn]}
+                        onPress={() => setConfirmCancel(false)}
+                        disabled={canceling}
+                      >
+                        <Text style={styles.keepText}>Keep Pro</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.confirmBtn, styles.cancelConfirmBtn]}
+                        onPress={handleCancel}
+                        disabled={canceling}
+                      >
+                        {canceling ? (
+                          <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                          <Text style={styles.cancelConfirmText}>Yes, cancel</Text>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </View>
+            ) : (
+              <TouchableOpacity style={styles.manageLink} onPress={() => openLink(SUBSCRIPTION_LINKS.manage)}>
+                <Text style={styles.manageText}>Manage existing subscription</Text>
+              </TouchableOpacity>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -158,4 +220,29 @@ const styles = StyleSheet.create({
   ctaGhostText: { color: colors.text },
   manageLink: { alignItems: 'center', paddingVertical: spacing.md },
   manageText: { fontSize: 14, color: colors.primary, fontWeight: '600' },
+
+  cancelBox: { marginTop: spacing.sm },
+  cancelLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: spacing.md,
+  },
+  cancelText: { fontSize: 14, color: colors.textMuted, fontWeight: '600' },
+  confirmWrap: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+  },
+  confirmTitle: { fontSize: 16, fontWeight: '800', color: colors.text },
+  confirmText: { fontSize: 13, color: colors.textMuted, marginTop: 6, lineHeight: 19 },
+  confirmRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
+  confirmBtn: { flex: 1, paddingVertical: 12, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  keepBtn: { backgroundColor: colors.primaryLight },
+  keepText: { color: colors.primary, fontSize: 14, fontWeight: '700' },
+  cancelConfirmBtn: { backgroundColor: colors.danger },
+  cancelConfirmText: { color: '#fff', fontSize: 14, fontWeight: '700' },
 });

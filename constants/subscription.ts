@@ -70,12 +70,13 @@ export const PLANS: Plan[] = [
     name: 'Free',
     price: '$0',
     period: 'forever',
-    tagline: 'Everything you need to build a prayer habit.',
+    tagline: 'Build a daily prayer habit.',
     features: [
       'Unlimited prayer reminders',
       'Unlimited saved verses',
       'Full sacred library access',
-      '20 AI Guide messages / day',
+      'Daily verse inspiration',
+      '3 free AI Guide messages to try',
     ],
   },
   {
@@ -83,14 +84,16 @@ export const PLANS: Plan[] = [
     name: 'Pro',
     price: 'ZAR 115',
     period: 'per month',
-    tagline: 'Unlock the full spiritual companion.',
+    tagline: 'Your full AI spiritual companion & planner.',
     highlight: true,
     provider: PAYSTACK_PLAN.provider,
     planCode: PAYSTACK_PLAN.planCode,
     features: [
       'Everything in Free',
-      'Unlimited AI Guide messages',
+      'Unlimited AI Guide chat',
       'AI prayer generation',
+      'Prayer Planner: weekly plan, goals & reminders',
+      'Reading plans integrated into your week',
       'Sermon recording & voice-to-text',
       'AI sermon summaries & notes',
       'Priority support',
@@ -98,5 +101,5 @@ export const PLANS: Plan[] = [
   },
 ];
 
-// Free-tier daily AI message allowance.
-export const FREE_AI_DAILY_LIMIT = 20;
+// Free users get a small lifetime taste of the AI Guide, then it becomes Pro-only.
+export const FREE_AI_TRIAL_LIMIT = 3;

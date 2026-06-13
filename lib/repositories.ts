@@ -3,6 +3,7 @@
 // configured the caller simply keeps using local state.
 
 import { supabase } from './supabase';
+import { CANCEL_SUBSCRIPTION_ENDPOINT } from '../constants/config';
 import type { FaithTradition, MessageSender, PlanId, PrayerStatus } from '../types/database';
 import type { Prayer } from '../context/PrayerContext';
 import type { SavedVerse } from '../context/UserContext';
@@ -207,6 +208,32 @@ export async function updatePlan(userId: string, plan: PlanId): Promise<void> {
     .upsert({ user_id: userId, plan, status: 'active' }, { onConflict: 'user_id' });
 }
 
+/**
+ * Cancels the signed-in user's Paystack subscription via the proxy server,
+ * which disables it on Paystack and downgrades them to Free. Returns a result
+ * the UI can act on.
+ */
+export async function cancelProSubscription(): Promise<{ ok: boolean; error?: string }> {
+  if (!supabase) return { ok: false, error: 'You need to be signed in to cancel.' };
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) return { ok: false, error: 'Please sign in again to cancel.' };
+
+  try {
+    const resp = await fetch(CANCEL_SUBSCRIPTION_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    });
+    if (!resp.ok) {
+      const body = await resp.json().catch(() => null);
+      return { ok: false, error: (body && body.error) || `Cancellation failed (${resp.status}).` };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, error: 'Could not reach the billing service. Please try again.' };
+  }
+}
+
 // ----------------------------- AI usage -----------------------------
 export async function fetchAiMessagesToday(userId: string): Promise<number> {
   if (!supabase) return 0;
@@ -218,6 +245,21 @@ export async function fetchAiMessagesToday(userId: string): Promise<number> {
     .eq('usage_date', today)
     .maybeSingle();
   return data ? data.message_count : 0;
+}
+
+/**
+ * Lifetime count of AI Guide messages this user has sent. Used to enforce the
+ * free trial limit — sums every day's counter, so clearing the chat history
+ * does not reset the trial.
+ */
+export async function fetchAiMessagesTotal(userId: string): Promise<number> {
+  if (!supabase) return 0;
+  const { data } = await supabase
+    .from('ai_usage')
+    .select('message_count')
+    .eq('user_id', userId);
+  if (!data) return 0;
+  return data.reduce((sum, row) => sum + (row.message_count ?? 0), 0);
 }
 
 /** Atomically bumps today's counter via the SQL RPC; returns the new total. */

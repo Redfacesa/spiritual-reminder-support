@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
-import { PlanId, FREE_AI_DAILY_LIMIT } from '../constants/subscription';
+import { PlanId, FREE_AI_TRIAL_LIMIT } from '../constants/subscription';
 import { useAuth } from './AuthContext';
 import {
   fetchProfile,
@@ -11,7 +11,7 @@ import {
   fetchSavedVerses,
   upsertSavedVerse,
   deleteSavedVerse,
-  fetchAiMessagesToday,
+  fetchAiMessagesTotal,
   incrementAiUsage,
 } from '../lib/repositories';
 
@@ -43,7 +43,7 @@ interface UserContextType {
   isVerseSaved: (ref: string) => boolean;
   toggleSavedVerse: (verse: SavedVerse) => void;
 
-  aiMessagesToday: number;
+  aiMessagesUsed: number;
   aiMessagesRemaining: number;
   registerAiMessage: () => void;
 }
@@ -70,7 +70,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [reminderSound, setReminderSoundState] = useState(true);
   const [dailyVerseEnabled, setDailyVerseEnabledState] = useState(true);
   const [savedVerses, setSavedVerses] = useState<SavedVerse[]>([]);
-  const [aiMessagesToday, setAiMessagesToday] = useState(0);
+  const [aiMessagesUsed, setAiMessagesUsed] = useState(0);
 
   const isPro = plan === 'pro';
 
@@ -86,18 +86,18 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       setReminderSoundState(true);
       setDailyVerseEnabledState(true);
       setSavedVerses([]);
-      setAiMessagesToday(0);
+      setAiMessagesUsed(0);
       return;
     }
     // Immediate per-user fallback so the greeting is personalised right away.
     setNameState(deriveNameFromUser(user));
     (async () => {
-      const [profile, settings, planId, verses, aiToday] = await Promise.all([
+      const [profile, settings, planId, verses, aiUsed] = await Promise.all([
         fetchProfile(userId),
         fetchSettings(userId),
         fetchPlan(userId),
         fetchSavedVerses(),
-        fetchAiMessagesToday(userId),
+        fetchAiMessagesTotal(userId),
       ]);
       if (cancelled) return;
       if (profile) {
@@ -111,7 +111,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       }
       if (planId) setPlanState(planId);
       setSavedVerses(verses);
-      setAiMessagesToday(aiToday);
+      setAiMessagesUsed(aiUsed);
     })();
     return () => {
       cancelled = true;
@@ -193,13 +193,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const registerAiMessage = useCallback(() => {
-    setAiMessagesToday((n) => n + 1);
+    setAiMessagesUsed((n) => n + 1);
     if (userId) incrementAiUsage();
   }, [userId]);
 
   const aiMessagesRemaining = isPro
     ? Infinity
-    : Math.max(0, FREE_AI_DAILY_LIMIT - aiMessagesToday);
+    : Math.max(0, FREE_AI_TRIAL_LIMIT - aiMessagesUsed);
 
   return (
     <UserContext.Provider
@@ -221,7 +221,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         savedVerses,
         isVerseSaved,
         toggleSavedVerse,
-        aiMessagesToday,
+        aiMessagesUsed,
         aiMessagesRemaining,
         registerAiMessage,
       }}
