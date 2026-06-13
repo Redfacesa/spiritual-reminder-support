@@ -314,6 +314,9 @@ img { max-width: 100%; display: block; }
 .redface img { width: 40px; height: 40px; }
 .redface a { color: var(--redface); font-weight: 700; }
 .footer-bottom .copy { font-size: 14px; color: #80849c; }
+.legal-links { display: flex; flex-wrap: wrap; gap: 10px 26px; padding-bottom: 4px; }
+.legal-links a { color: #9ca0b8; font-size: 14px; font-weight: 600; transition: color 0.15s; }
+.legal-links a:hover { color: #fff; }
 
 /* ---------------- Legal pages ---------------- */
 .legal { padding: 70px 0 90px; }

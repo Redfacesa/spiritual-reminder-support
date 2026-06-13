@@ -32,8 +32,17 @@ app.use(
 );
 
 // Clean URLs for the legal pages (redirect so their relative assets resolve).
-app.get('/privacy', (_req, res) => res.redirect(301, '/welcome/privacy.html'));
-app.get('/terms', (_req, res) => res.redirect(301, '/welcome/terms.html'));
+const LEGAL_REDIRECTS = {
+  '/privacy': '/welcome/privacy.html',
+  '/terms': '/welcome/terms.html',
+  '/refund': '/welcome/refund.html',
+  '/cookies': '/welcome/cookies.html',
+  '/data-deletion': '/welcome/data-deletion.html',
+  '/support': '/welcome/support.html',
+};
+Object.entries(LEGAL_REDIRECTS).forEach(([from, to]) => {
+  app.get(from, (_req, res) => res.redirect(301, to));
+});
 
 // ---- The web app (Expo export) ----------------------------------------
 const hasBuild = fs.existsSync(path.join(DIST, 'index.html'));
@@ -65,5 +74,5 @@ app.listen(PORT, () => {
   console.log(`\nPrayer Reminder web server running on http://localhost:${PORT}`);
   console.log(`  App:        /            ${hasBuild ? '(serving dist/)' : '(build missing — run npm run web:export)'}`);
   console.log('  Marketing:  /welcome');
-  console.log('  Legal:      /privacy, /terms\n');
+  console.log('  Legal:      /privacy, /terms, /refund, /cookies, /data-deletion, /support\n');
 });

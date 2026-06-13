@@ -13,6 +13,22 @@
       "destination": "/welcome/terms.html"
     },
     {
+      "source": "/refund",
+      "destination": "/welcome/refund.html"
+    },
+    {
+      "source": "/cookies",
+      "destination": "/welcome/cookies.html"
+    },
+    {
+      "source": "/data-deletion",
+      "destination": "/welcome/data-deletion.html"
+    },
+    {
+      "source": "/support",
+      "destination": "/welcome/support.html"
+    },
+    {
       "source": "/welcome",
       "destination": "/welcome/index.html"
     }

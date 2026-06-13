@@ -10,6 +10,7 @@ import FaithCard from '../../components/FaithCard';
 import CreatePrayerModal from '../../components/CreatePrayerModal';
 import GuidanceModal from '../../components/GuidanceModal';
 import DailyVerse from '../../components/DailyVerse';
+import WebFooter from '../../components/WebFooter';
 import { FAITH_TRADITIONS } from '../../constants/faithData';
 import { colors, radius, shadow, spacing } from '../../constants/theme';
 
@@ -147,6 +148,8 @@ export default function HomeScreen() {
             ))}
           </View>
         </View>
+
+        <WebFooter />
       </ScrollView>
 
       <CreatePrayerModal
