@@ -23,7 +23,14 @@ android
 
 expo-env.d.ts
 
-# Local environment / secrets
+# Local environment / secrets — never commit anything with real keys
 .env
-.env.local
+.env.*
+!.env.example
+*.env
+*.env.*
 server/.env
+server/.env.*
+!server/.env.example
+.env_prod
+server/.env_prod
