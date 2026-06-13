@@ -1,0 +1,20 @@
+{
+  "buildCommand": "npm run web:export",
+  "outputDirectory": "dist",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/privacy",
+      "destination": "/welcome/privacy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/welcome/terms.html"
+    },
+    {
+      "source": "/welcome",
+      "destination": "/welcome/index.html"
+    }
+  ]
+}

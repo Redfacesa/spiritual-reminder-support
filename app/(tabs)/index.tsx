@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, Linking, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,9 @@ import GuidanceModal from '../../components/GuidanceModal';
 import DailyVerse from '../../components/DailyVerse';
 import { FAITH_TRADITIONS } from '../../constants/faithData';
 import { colors, radius, shadow, spacing } from '../../constants/theme';
+
+const APP_STORE_URL = 'https://apps.apple.com/us/app/prayer-reminder/id6755526671';
+const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.prayer.reminder.app';
 
 function greeting() {
   const h = new Date().getHours();
@@ -60,6 +63,8 @@ export default function HomeScreen() {
         contentContainerStyle={{ paddingTop: insets.top + spacing.md, paddingBottom: spacing.xxl }}
         showsVerticalScrollIndicator={false}
       >
+        {Platform.OS === 'web' && <WebHomeHero />}
+
         {/* Welcome / streak card */}
         <View style={styles.welcomeWrap}>
           <View style={styles.welcomeCard}>
@@ -161,6 +166,62 @@ export default function HomeScreen() {
   );
 }
 
+function WebHomeHero() {
+  const openLink = (url: string) => Linking.openURL(url);
+
+  return (
+    <View style={styles.webHeroWrap}>
+      <View style={styles.webHero}>
+        <View style={styles.webHeroCopy}>
+          <View style={styles.webEyebrow}>
+            <Ionicons name="sparkles" size={14} color={colors.primary} />
+            <Text style={styles.webEyebrowText}>Prayer Reminder Web App</Text>
+          </View>
+          <Text style={styles.webHeroTitle}>
+            Same powerful prayer app, redesigned for the web.
+          </Text>
+          <Text style={styles.webHeroText}>
+            Manage prayers, read sacred texts, follow reading plans, ask the AI guide, and keep your spiritual rhythm from any browser.
+          </Text>
+
+          <View style={styles.webHeroActions}>
+            <TouchableOpacity style={styles.webPrimaryBtn} onPress={() => openLink(APP_STORE_URL)} activeOpacity={0.85}>
+              <Ionicons name="logo-apple" size={20} color="#fff" />
+              <View>
+                <Text style={styles.webStoreSmall}>Download on the</Text>
+                <Text style={styles.webStoreStrong}>App Store</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.webDarkBtn} onPress={() => openLink(PLAY_STORE_URL)} activeOpacity={0.85}>
+              <Ionicons name="logo-google-playstore" size={20} color="#fff" />
+              <View>
+                <Text style={styles.webStoreSmall}>Get it on</Text>
+                <Text style={styles.webStoreStrong}>Google Play</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.redFaceRow}>
+            <Image source={{ uri: '/welcome/assets/redface-logo.png' }} style={styles.redFaceLogo} />
+            <View>
+              <Text style={styles.redFaceText}>Built by Red Face (Pty) Ltd</Text>
+              <Text style={styles.redFaceLink}>www.redface.in</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.webHeroMedia}>
+          <Image source={{ uri: '/welcome/assets/hero.png' }} style={styles.webHeroImage} resizeMode="cover" />
+          <View style={styles.webFloatCard}>
+            <Ionicons name="notifications" size={18} color={colors.primary} />
+            <Text style={styles.webFloatText}>Mobile downloads ready</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function QuickAction({
   icon,
   label,
@@ -184,6 +245,85 @@ function QuickAction({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  webHeroWrap: {
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.xl,
+  },
+  webHero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xl,
+    backgroundColor: colors.card,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow.card,
+  },
+  webHeroCopy: { flex: 1.05 },
+  webEyebrow: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+    marginBottom: spacing.md,
+  },
+  webEyebrowText: { color: colors.primary, fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
+  webHeroTitle: { fontSize: 38, lineHeight: 44, fontWeight: '900', color: colors.text, maxWidth: 620 },
+  webHeroText: { fontSize: 16, lineHeight: 25, color: colors.textMuted, marginTop: spacing.md, maxWidth: 560 },
+  webHeroActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.xl },
+  webPrimaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    ...shadow.soft,
+  },
+  webDarkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#101322',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    ...shadow.soft,
+  },
+  webStoreSmall: { color: 'rgba(255,255,255,0.78)', fontSize: 10, fontWeight: '600' },
+  webStoreStrong: { color: '#fff', fontSize: 15, fontWeight: '800', marginTop: 1 },
+  redFaceRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: spacing.xl },
+  redFaceLogo: { width: 38, height: 38, borderRadius: 8, backgroundColor: '#FBE4E4' },
+  redFaceText: { fontSize: 13, fontWeight: '700', color: colors.text },
+  redFaceLink: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
+  webHeroMedia: { flex: 0.95, position: 'relative' },
+  webHeroImage: {
+    width: '100%',
+    height: 330,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  webFloatCard: {
+    position: 'absolute',
+    right: 18,
+    bottom: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    ...shadow.soft,
+  },
+  webFloatText: { color: colors.text, fontSize: 13, fontWeight: '800' },
   welcomeWrap: { paddingHorizontal: spacing.xl },
   welcomeCard: {
     backgroundColor: colors.primary,
