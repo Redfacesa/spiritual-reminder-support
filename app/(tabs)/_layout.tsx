@@ -1,26 +1,27 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors } from '../../constants/theme';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#4169E1',
-        tabBarInactiveTintColor: '#888',
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textFaint,
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         tabBarStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: colors.card,
           borderTopWidth: 1,
-          borderTopColor: '#e5e5e5',
-          paddingBottom: 80,
+          borderTopColor: colors.border,
+          // Respect the device safe area instead of a hard-coded offset.
+          height: 58 + insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 8),
           paddingTop: 8,
-          height: 60,
-        },
-        headerStyle: {
-          backgroundColor: '#4169E1',
-        },
-        headerTintColor: '#fff',
-        headerTitleStyle: {
-          fontWeight: '700',
         },
       }}
     >
@@ -34,8 +35,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="prayers"
         options={{
-          title: 'My Prayers',
-          tabBarIcon: ({ color, size }) => <Ionicons name="list" size={size} color={color} />,
+          title: 'Prayers',
+          tabBarIcon: ({ color, size }) => <Ionicons name="heart" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -48,8 +49,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="guidance"
         options={{
-          title: 'Guidance',
-          tabBarIcon: ({ color, size }) => <Ionicons name="compass" size={size} color={color} />,
+          title: 'AI Guide',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="sparkles" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen

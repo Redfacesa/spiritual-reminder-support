@@ -22,3 +22,8 @@ android
 .metro-health-check*
 
 expo-env.d.ts
+
+# Local environment / secrets
+.env
+.env.local
+server/.env

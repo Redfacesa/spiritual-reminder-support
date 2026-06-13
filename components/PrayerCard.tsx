@@ -1,62 +1,154 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Prayer } from '../context/PrayerContext';
+import { Ionicons } from '@expo/vector-icons';
+import { Prayer, PrayerStatus } from '../context/PrayerContext';
 import { FAITH_TRADITIONS } from '../constants/faithData';
+import { colors, radius, shadow, spacing } from '../constants/theme';
 
 interface PrayerCardProps {
   prayer: Prayer;
-  onStatusToggle: () => void;
+  onSetStatus: (status: PrayerStatus) => void;
   onDelete: () => void;
+  onGuidance?: () => void;
 }
 
-export default function PrayerCard({ prayer, onStatusToggle, onDelete }: PrayerCardProps) {
-  const faith = FAITH_TRADITIONS.find(f => f.id === prayer.faith);
-  
+const fmtDate = (iso: string) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
+
+export default function PrayerCard({ prayer, onSetStatus, onDelete, onGuidance }: PrayerCardProps) {
+  const faith = FAITH_TRADITIONS.find((f) => f.id === prayer.faith);
+  const accent = faith?.color || colors.accent;
+  const isActive = prayer.status === 'active';
+
   return (
-    <View style={[styles.card, { borderLeftColor: faith?.color || '#9370DB' }]}>
+    <View style={[styles.card, { borderLeftColor: accent }]}>
       <View style={styles.header}>
-        <Text style={styles.topic}>{prayer.topic}</Text>
-        <Text style={styles.faith}>{faith?.name}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.topic}>{prayer.topic}</Text>
+          <Text style={styles.faith}>{faith?.name}</Text>
+        </View>
+        <StatusBadge status={prayer.status} />
       </View>
-      <View style={styles.details}>
-        <Text style={styles.time}>{prayer.date} at {prayer.reminderTime}</Text>
-        {prayer.recurring && <Text style={styles.recurring}>Recurring</Text>}
+
+      <View style={styles.metaRow}>
+        <View style={styles.metaItem}>
+          <Ionicons name="alarm-outline" size={14} color={colors.textMuted} />
+          <Text style={styles.metaText}>
+            {prayer.reminderTime}
+            {prayer.recurring ? ' Daily' : ''}
+          </Text>
+        </View>
+        <View style={styles.metaItem}>
+          <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
+          <Text style={styles.metaText}>Created {fmtDate(prayer.createdAt)}</Text>
+        </View>
       </View>
-      <View style={styles.actions}>
-        <TouchableOpacity onPress={onStatusToggle} style={[styles.button, prayer.status === 'completed' && styles.completedButton]}>
-          <Text style={styles.buttonText}>{prayer.status === 'completed' ? 'Completed' : 'Mark Complete'}</Text>
+
+      {onGuidance && (
+        <TouchableOpacity onPress={onGuidance} style={[styles.guidanceButton, { backgroundColor: accent + '15' }]}>
+          <Ionicons name="sparkles" size={15} color={accent} />
+          <Text style={[styles.guidanceText, { color: accent }]}>Get AI Guidance</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onDelete} style={styles.deleteButton}>
-          <Text style={styles.deleteText}>Delete</Text>
+      )}
+
+      <View style={styles.actions}>
+        {isActive ? (
+          <>
+            <TouchableOpacity onPress={() => onSetStatus('completed')} style={[styles.btn, styles.primaryBtn]}>
+              <Ionicons name="checkmark" size={15} color="#fff" />
+              <Text style={styles.primaryBtnText}>Complete</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => onSetStatus('answered')} style={[styles.btn, styles.answeredBtn]}>
+              <Ionicons name="sparkles-outline" size={15} color={colors.gold} />
+              <Text style={[styles.ghostBtnText, { color: colors.gold }]}>Answered</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <TouchableOpacity onPress={() => onSetStatus('active')} style={[styles.btn, styles.reactivateBtn]}>
+            <Ionicons name="refresh" size={15} color={colors.primary} />
+            <Text style={[styles.ghostBtnText, { color: colors.primary }]}>Reactivate</Text>
+          </TouchableOpacity>
+        )}
+
+        {prayer.status !== 'archived' && isActive && (
+          <TouchableOpacity onPress={() => onSetStatus('archived')} style={styles.iconBtn}>
+            <Ionicons name="archive-outline" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity onPress={onDelete} style={styles.iconBtn}>
+          <Ionicons name="trash-outline" size={18} color={colors.danger} />
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
+function StatusBadge({ status }: { status: PrayerStatus }) {
+  const map: Record<PrayerStatus, { label: string; bg: string; fg: string }> = {
+    active: { label: 'Active', bg: colors.primaryLight, fg: colors.primary },
+    completed: { label: 'Completed', bg: colors.successSoft, fg: colors.success },
+    answered: { label: 'Answered', bg: colors.goldSoft, fg: colors.gold },
+    archived: { label: 'Archived', bg: '#EEF0F5', fg: colors.textMuted },
+  };
+  const s = map[status];
+  return (
+    <View style={[styles.badge, { backgroundColor: s.bg }]}>
+      <Text style={[styles.badgeText, { color: s.fg }]}>{s.label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadow.soft,
   },
-  header: { marginBottom: 8 },
-  topic: { fontSize: 16, fontWeight: '700', color: '#1a1a1a', marginBottom: 4 },
-  faith: { fontSize: 13, color: '#666' },
-  details: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  time: { fontSize: 12, color: '#888', marginRight: 8 },
-  recurring: { fontSize: 11, color: '#9370DB', fontWeight: '600' },
-  actions: { flexDirection: 'row', gap: 8 },
-  button: { flex: 1, backgroundColor: '#4169E1', padding: 10, borderRadius: 8, alignItems: 'center' },
-  completedButton: { backgroundColor: '#22c55e' },
-  buttonText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  deleteButton: { paddingHorizontal: 16, justifyContent: 'center' },
-  deleteText: { color: '#ef4444', fontSize: 13, fontWeight: '600' },
+  header: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.md },
+  topic: { fontSize: 16, fontWeight: '700', color: colors.text },
+  faith: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },
+  badgeText: { fontSize: 11, fontWeight: '700' },
+  metaRow: { flexDirection: 'row', gap: spacing.lg, marginBottom: spacing.md },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metaText: { fontSize: 12, color: colors.textMuted },
+  guidanceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: radius.sm,
+    marginBottom: spacing.md,
+  },
+  guidanceText: { fontSize: 13, fontWeight: '700' },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  btn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: radius.sm,
+  },
+  primaryBtn: { flex: 1, backgroundColor: colors.primary },
+  primaryBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  answeredBtn: { flex: 1, backgroundColor: colors.goldSoft },
+  reactivateBtn: { flex: 1, backgroundColor: colors.primaryLight },
+  ghostBtnText: { fontSize: 13, fontWeight: '700' },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.sm,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

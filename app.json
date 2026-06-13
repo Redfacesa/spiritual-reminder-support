@@ -39,7 +39,15 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-asset",
+      "expo-localization",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Prayer Reminder to record sermon audio for transcription and AI summaries."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

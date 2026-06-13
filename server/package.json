@@ -1,0 +1,21 @@
+{
+  "name": "spiritual-reminder-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Secure proxy server that keeps the xAI (Grok) API key off the client and forwards spiritual guidance requests.",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "multer": "^2.1.1"
+  }
+}

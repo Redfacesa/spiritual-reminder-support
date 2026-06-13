@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { colors, radius, shadow } from '../constants/theme';
 
 interface FaithCardProps {
   name: string;
@@ -10,11 +11,9 @@ interface FaithCardProps {
 
 export default function FaithCard({ name, image, color, onPress }: FaithCardProps) {
   return (
-    <TouchableOpacity onPress={onPress} style={styles.card}>
-      <View style={[styles.imageContainer, { backgroundColor: color + '20' }]}>
-        <Image source={{ uri: image }} style={styles.image} />
-      </View>
-      <Text style={styles.name}>{name}</Text>
+    <TouchableOpacity onPress={onPress} style={styles.card} activeOpacity={0.85}>
+      <Image source={{ uri: image }} style={[styles.image, { backgroundColor: color + '22' }]} />
+      <Text style={styles.name} numberOfLines={1}>{name}</Text>
     </TouchableOpacity>
   );
 }
@@ -22,34 +21,26 @@ export default function FaithCard({ name, image, color, onPress }: FaithCardProp
 const styles = StyleSheet.create({
   card: {
     width: '48%',
-    marginBottom: 16,
-    borderRadius: 16,
-    backgroundColor: '#fff',
-    padding: 12,
+    marginBottom: 12,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  imageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
+    gap: 10,
+    ...shadow.soft,
   },
   image: {
-    width: 50,
-    height: 50,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     resizeMode: 'contain',
   },
   name: {
+    flex: 1,
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    textAlign: 'center',
+    fontWeight: '700',
+    color: colors.text,
   },
 });

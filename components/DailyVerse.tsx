@@ -1,55 +1,63 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SACRED_TEXTS } from '../constants/sacredTexts';
+import { useUser } from '../context/UserContext';
+import { colors, radius, shadow, spacing } from '../constants/theme';
+
+// Deterministic pick so the "daily" verse is stable within a day.
+function pickDaily<T>(items: T[]): T {
+  const dayIndex = Math.floor(Date.now() / 86_400_000);
+  return items[dayIndex % items.length];
+}
 
 export default function DailyVerse() {
-  // Get a random verse from all traditions
-  const allTexts = Object.values(SACRED_TEXTS).flat();
-  const randomVerse = allTexts[Math.floor(Math.random() * allTexts.length)];
+  const { faith, isVerseSaved, toggleSavedVerse, dailyVerseEnabled } = useUser();
+
+  const verse = useMemo(() => {
+    const pool = SACRED_TEXTS[faith]?.length ? SACRED_TEXTS[faith] : Object.values(SACRED_TEXTS).flat();
+    return pickDaily(pool);
+  }, [faith]);
+
+  const saved = isVerseSaved(verse.ref);
+
+  if (!dailyVerseEnabled) return null;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Daily Inspiration</Text>
+    <View style={styles.wrapper}>
+      <View style={styles.headerRow}>
+        <Text style={styles.label}>Today's Inspiration</Text>
+        <TouchableOpacity onPress={() => toggleSavedVerse({ ...verse, faith })} hitSlop={8}>
+          <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={20} color={colors.primary} />
+        </TouchableOpacity>
+      </View>
       <View style={styles.card}>
-        <Text style={styles.reference}>{randomVerse.ref}</Text>
-        <Text style={styles.text}>{randomVerse.text}</Text>
+        <Ionicons name="sparkles" size={18} color={colors.accent} style={styles.quoteIcon} />
+        <Text style={styles.reference}>{verse.ref}</Text>
+        <Text style={styles.text}>{verse.text}</Text>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
+  wrapper: { paddingHorizontal: spacing.xl, marginTop: spacing.sm },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
   },
-  label: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 12,
-  },
+  label: { fontSize: 18, fontWeight: '700', color: colors.text },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: spacing.xl,
     borderLeftWidth: 4,
-    borderLeftColor: '#9370DB',
+    borderLeftColor: colors.accent,
+    ...shadow.card,
   },
-  reference: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#4169E1',
-    marginBottom: 8,
-  },
-  text: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#333',
-    fontStyle: 'italic',
-  },
+  quoteIcon: { marginBottom: 8 },
+  reference: { fontSize: 14, fontWeight: '700', color: colors.primary, marginBottom: 8 },
+  text: { fontSize: 16, lineHeight: 24, color: colors.text, fontStyle: 'italic' },
 });

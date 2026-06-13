@@ -5,7 +5,10 @@ const path = require('path');
 const config = getDefaultConfig(__dirname);
 
 // Ensure Metro can resolve ESM/mjs files
-config.resolver.sourceExts = [...(config.resolver.sourceExts || []), 'mjs'];
+config.resolver.sourceExts = Array.from(new Set([...(config.resolver.sourceExts || []), 'mjs']));
+
+// expo-sqlite's web implementation imports a WASM file.
+config.resolver.assetExts = Array.from(new Set([...(config.resolver.assetExts || []), 'wasm']));
 
 // Force Metro to use project-local resolution only
 config.resolver.resolverMainFields = ['react-native', 'browser', 'main'];

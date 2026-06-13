@@ -1,54 +1,113 @@
+import { Platform } from 'react-native';
 import * as SQLite from 'expo-sqlite';
 
-export async function openDatabase() {
-    const db = await SQLite.openDatabaseAsync("support.db");
-    return db;
+export type MessageSender = 'user' | 'ai';
+
+export interface StoredMessage {
+  id: string;
+  text: string;
+  sender: MessageSender;
+  timestamp: Date;
+  faith?: string;
 }
 
-export async function initializeDb(db: SQLite.SQLiteDatabase){
-    await db.execAsync("DROP TABLE IF EXISTS prayers;");
-    await db.execAsync(`
-        CREATE TABLE IF NOT EXISTS prayers(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        faith TEXT,
-        title TEXT,
-        content TEXT,
-        createdAt TEXT
-    );
-    `);
-    //console.log("Database initialized");
+// On web, expo-sqlite relies on an OPFS sync access handle that can only be
+// held by one connection at a time. Fast Refresh and page reloads routinely
+// leave a stale handle locked, which throws:
+//   "Access Handles cannot be created if there is another open Access Handle".
+// To avoid that entirely we persist chat history with localStorage on web and
+// keep SQLite only on native platforms (where it works reliably).
+const isWeb = Platform.OS === 'web';
+const WEB_KEY = 'support.messages.v1';
 
-    await db.execAsync("DROP TABLE IF EXISTS messages;");
-    await db.execAsync(`
-    CREATE TABLE IF NOT EXISTS messages(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        sender TEXT NOT NULL,
-        text TEXT NOT NULL,
-        timestamp TEXT NOT NULL
-    );
-  `);
-  return db;
+// ---------- Web (localStorage) ----------
+function webLoad(): StoredMessage[] {
+  try {
+    const raw = globalThis.localStorage?.getItem(WEB_KEY);
+    if (!raw) return [];
+    return (JSON.parse(raw) as StoredMessage[]).map((m) => ({
+      ...m,
+      timestamp: new Date(m.timestamp),
+    }));
+  } catch {
+    return [];
+  }
 }
 
-export async function saveMessage(db: SQLite.SQLiteDatabase, message: { id: string; text: string; sender: string; timestamp: Date }) {
-  await db.execAsync(
-    `INSERT OR REPLACE INTO messages (id, text, sender, timestamp) VALUES (?, ?, ?, ?)`,
-    [message.id, message.text, message.sender, message.timestamp.toISOString()]
+function webSave(messages: StoredMessage[]) {
+  try {
+    globalThis.localStorage?.setItem(WEB_KEY, JSON.stringify(messages));
+  } catch {
+    // storage may be unavailable (private mode) — fail silently
+  }
+}
+
+// ---------- Native (SQLite) ----------
+let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
+
+async function getNativeDb() {
+  if (!dbPromise) {
+    dbPromise = (async () => {
+      const db = await SQLite.openDatabaseAsync('support.db');
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS messages (
+          id TEXT PRIMARY KEY NOT NULL,
+          sender TEXT NOT NULL,
+          text TEXT NOT NULL,
+          faith TEXT,
+          timestamp TEXT NOT NULL
+        );
+      `);
+      return db;
+    })();
+  }
+  return dbPromise;
+}
+
+// ---------- Public API (platform-agnostic) ----------
+export async function loadMessages(): Promise<StoredMessage[]> {
+  if (isWeb) return webLoad();
+
+  const db = await getNativeDb();
+  const rows = await db.getAllAsync<{
+    id: string;
+    sender: string;
+    text: string;
+    faith: string | null;
+    timestamp: string;
+  }>(`SELECT id, sender, text, faith, timestamp FROM messages ORDER BY timestamp ASC`);
+
+  return rows.map((row) => ({
+    id: row.id,
+    text: row.text,
+    sender: (row.sender === 'ai' ? 'ai' : 'user') as MessageSender,
+    timestamp: new Date(row.timestamp),
+    faith: row.faith ?? undefined,
+  }));
+}
+
+export async function saveMessage(message: StoredMessage): Promise<void> {
+  if (isWeb) {
+    const all = webLoad();
+    const idx = all.findIndex((m) => m.id === message.id);
+    if (idx >= 0) all[idx] = message;
+    else all.push(message);
+    webSave(all);
+    return;
+  }
+
+  const db = await getNativeDb();
+  await db.runAsync(
+    `INSERT OR REPLACE INTO messages (id, sender, text, faith, timestamp) VALUES (?, ?, ?, ?, ?)`,
+    [message.id, message.sender, message.text, message.faith ?? null, message.timestamp.toISOString()]
   );
 }
 
-export async function loadMessages(db: SQLite.SQLiteDatabase) {
-  const result = await db.execAsync(`SELECT * FROM messages ORDER BY timestamp ASC`);
-
-   // Check result
-  if (!result || !result[0] || !result[0].rows) {
-    return []; // return empty array if no results
+export async function clearMessages(): Promise<void> {
+  if (isWeb) {
+    webSave([]);
+    return;
   }
-  
-  return result.rows._array.map((row: any) => ({
-    id: row.id,
-    text: row.text,
-    sender: row.sender as 'user' | 'ai',
-    timestamp: new Date(row.timestamp),
-  }));
+  const db = await getNativeDb();
+  await db.runAsync(`DELETE FROM messages`);
 }
