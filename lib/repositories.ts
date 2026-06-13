@@ -142,17 +142,18 @@ export async function deleteSavedVerse(userId: string, ref: string): Promise<voi
 export interface RemoteProfile {
   name: string;
   faith: FaithTradition;
+  avatarUrl: string;
 }
 
 export async function fetchProfile(userId: string): Promise<RemoteProfile | null> {
   if (!supabase) return null;
   const { data } = await supabase
     .from('profiles')
-    .select('display_name, faith')
+    .select('display_name, faith, avatar_url')
     .eq('id', userId)
     .maybeSingle();
   if (!data) return null;
-  return { name: data.display_name ?? '', faith: asFaith(data.faith) };
+  return { name: data.display_name ?? '', faith: asFaith(data.faith), avatarUrl: data.avatar_url ?? '' };
 }
 
 export async function updateProfile(userId: string, patch: Partial<RemoteProfile>): Promise<void> {
@@ -160,7 +161,63 @@ export async function updateProfile(userId: string, patch: Partial<RemoteProfile
   const row: Record<string, unknown> = {};
   if (patch.name !== undefined) row.display_name = patch.name;
   if (patch.faith !== undefined) row.faith = patch.faith;
+  if (patch.avatarUrl !== undefined) row.avatar_url = patch.avatarUrl;
   if (Object.keys(row).length) await supabase.from('profiles').update(row).eq('id', userId);
+}
+
+// Decodes a base64 string (no data: prefix) to bytes without relying on atob,
+// which isn't available in all React Native runtimes.
+function base64ToBytes(base64: string): Uint8Array {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const lookup = new Uint8Array(256);
+  for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i;
+
+  const clean = base64.replace(/[^A-Za-z0-9+/]/g, '');
+  const len = clean.length;
+  const padding = clean.endsWith('==') ? 2 : clean.endsWith('=') ? 1 : 0;
+  const byteLength = (len * 3) / 4 - padding;
+  const bytes = new Uint8Array(byteLength);
+
+  let p = 0;
+  for (let i = 0; i < len; i += 4) {
+    const a = lookup[clean.charCodeAt(i)];
+    const b = lookup[clean.charCodeAt(i + 1)];
+    const c = lookup[clean.charCodeAt(i + 2)];
+    const d = lookup[clean.charCodeAt(i + 3)];
+    if (p < byteLength) bytes[p++] = (a << 2) | (b >> 4);
+    if (p < byteLength) bytes[p++] = ((b & 15) << 4) | (c >> 2);
+    if (p < byteLength) bytes[p++] = ((c & 3) << 6) | d;
+  }
+  return bytes;
+}
+
+/**
+ * Uploads a profile picture (provided as raw base64) to the user's folder in
+ * the `avatars` bucket and saves the public URL on their profile. Returns the
+ * public URL, or null on failure.
+ */
+export async function uploadAvatar(
+  userId: string,
+  base64: string,
+  ext = 'jpg'
+): Promise<string | null> {
+  if (!supabase) return null;
+  try {
+    const bytes = base64ToBytes(base64);
+    const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
+    const path = `${userId}/avatar-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
+      .from('profilepic')
+      .upload(path, bytes, { contentType, upsert: true });
+    if (error) return null;
+
+    const { data } = supabase.storage.from('profilepic').getPublicUrl(path);
+    const url = data.publicUrl;
+    await updateProfile(userId, { avatarUrl: url });
+    return url;
+  } catch {
+    return null;
+  }
 }
 
 // ----------------------------- Settings -----------------------------

@@ -13,6 +13,7 @@ import {
   deleteSavedVerse,
   fetchAiMessagesTotal,
   incrementAiUsage,
+  uploadAvatar,
 } from '../lib/repositories';
 
 export interface SavedVerse {
@@ -26,6 +27,8 @@ interface UserContextType {
   setName: (name: string) => void;
   faith: string;
   setFaith: (faith: string) => void;
+  avatarUrl: string;
+  setAvatar: (base64: string, ext?: string) => Promise<boolean>;
 
   plan: PlanId;
   isPro: boolean;
@@ -61,6 +64,14 @@ function deriveNameFromUser(user: { email?: string | null; user_metadata?: Recor
   return '';
 }
 
+// Best-effort avatar from the auth provider metadata (e.g. social logins),
+// used until the profile row loads.
+function deriveAvatarFromUser(user: { user_metadata?: Record<string, any> } | null): string {
+  const meta = user?.user_metadata ?? {};
+  const url = meta.avatar_url || meta.picture;
+  return url ? String(url) : '';
+}
+
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const { userId, user } = useAuth();
   const [name, setNameState] = useState('');
@@ -71,6 +82,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [dailyVerseEnabled, setDailyVerseEnabledState] = useState(true);
   const [savedVerses, setSavedVerses] = useState<SavedVerse[]>([]);
   const [aiMessagesUsed, setAiMessagesUsed] = useState(0);
+  const [avatarUrl, setAvatarUrlState] = useState('');
 
   const isPro = plan === 'pro';
 
@@ -87,10 +99,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       setDailyVerseEnabledState(true);
       setSavedVerses([]);
       setAiMessagesUsed(0);
+      setAvatarUrlState('');
       return;
     }
     // Immediate per-user fallback so the greeting is personalised right away.
     setNameState(deriveNameFromUser(user));
+    setAvatarUrlState(deriveAvatarFromUser(user));
     (async () => {
       const [profile, settings, planId, verses, aiUsed] = await Promise.all([
         fetchProfile(userId),
@@ -103,6 +117,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       if (profile) {
         if (profile.name) setNameState(profile.name);
         setFaithState(profile.faith);
+        if (profile.avatarUrl) setAvatarUrlState(profile.avatarUrl);
       }
       if (settings) {
         setNotificationsEnabledState(settings.notifications_enabled);
@@ -130,6 +145,20 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     (value: string) => {
       setFaithState(value);
       if (userId) updateProfile(userId, { faith: value as any });
+    },
+    [userId]
+  );
+
+  const setAvatar = useCallback(
+    async (base64: string, ext = 'jpg') => {
+      if (!userId) return false;
+      const url = await uploadAvatar(userId, base64, ext);
+      if (url) {
+        // Bust any cached image by keeping the unique timestamped URL.
+        setAvatarUrlState(url);
+        return true;
+      }
+      return false;
     },
     [userId]
   );
@@ -208,6 +237,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         setName,
         faith,
         setFaith,
+        avatarUrl,
+        setAvatar,
         plan,
         isPro,
         setPlan,

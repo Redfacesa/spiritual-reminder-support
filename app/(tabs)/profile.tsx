@@ -7,10 +7,14 @@ import {
   Switch,
   TouchableOpacity,
   Modal,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 
 import { usePrayers } from '../../context/PrayerContext';
 import { useUser } from '../../context/UserContext';
@@ -37,11 +41,14 @@ export default function ProfileScreen() {
     notificationsEnabled,
     setNotificationsEnabled,
     toggleSavedVerse,
+    avatarUrl,
+    setAvatar,
   } = useUser();
 
   const { configured, user, signOut } = useAuth();
   const router = useRouter();
 
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [subVisible, setSubVisible] = useState(false);
   const [savedVisible, setSavedVisible] = useState(false);
   const [historyVisible, setHistoryVisible] = useState(false);
@@ -56,14 +63,56 @@ export default function ProfileScreen() {
 
   const answered = prayers.filter((p) => p.status === 'answered').length;
 
+  const pickAvatar = async () => {
+    if (!user) {
+      Alert.alert('Sign in first', 'Sign in to add a profile picture that syncs across your devices.');
+      return;
+    }
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Permission needed', 'Allow photo access to choose a profile picture.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.6,
+        base64: true,
+      });
+      if (result.canceled || !result.assets?.[0]?.base64) return;
+      const asset = result.assets[0];
+      const ext = asset.uri.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
+      setUploadingAvatar(true);
+      const ok = await setAvatar(asset.base64!, ext);
+      setUploadingAvatar(false);
+      if (!ok) Alert.alert('Upload failed', 'Could not update your photo. Please try again.');
+    } catch {
+      setUploadingAvatar(false);
+      Alert.alert('Something went wrong', 'Could not open your photos. Please try again.');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: spacing.xxl }} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={[styles.header, { paddingTop: insets.top + spacing.xl }]}>
-          <View style={styles.avatar}>
-            <Ionicons name="person" size={42} color={colors.primary} />
-          </View>
+          <TouchableOpacity style={styles.avatar} onPress={pickAvatar} activeOpacity={0.85}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatarImage} contentFit="cover" transition={150} />
+            ) : (
+              <Ionicons name="person" size={42} color={colors.primary} />
+            )}
+            <View style={styles.avatarBadge}>
+              {uploadingAvatar ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name="camera" size={15} color="#fff" />
+              )}
+            </View>
+          </TouchableOpacity>
           <Text style={styles.name}>{name || 'Friend'}</Text>
           <View style={[styles.planBadge, isPro ? styles.proBadge : styles.freeBadge]}>
             {isPro && <Ionicons name="star" size={12} color={colors.gold} />}
@@ -333,6 +382,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.md,
+  },
+  avatarImage: { width: 88, height: 88, borderRadius: 44 },
+  avatarBadge: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.card,
   },
   name: { fontSize: 22, fontWeight: '800', color: colors.text },
   planBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 5, borderRadius: radius.pill, marginTop: 8 },
