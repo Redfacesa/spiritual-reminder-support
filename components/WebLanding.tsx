@@ -15,8 +15,7 @@ import AuthForm, { AuthMode } from './AuthForm';
 import WebFooter from './WebFooter';
 import { colors, radius, shadow, spacing } from '../constants/theme';
 
-const APP_STORE_URL = 'https://apps.apple.com/us/app/prayer-reminder/id6755526671';
-const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.prayer.reminder.app';
+import { APP_STORE_URL, PLAY_STORE_URL, STORE_BADGE_LEAD } from '../constants/ecosystem';
 
 const FEATURES: { icon: keyof typeof Ionicons.glyphMap; tint: string; title: string; text: string }[] = [
   { icon: 'notifications', tint: '#EC4899', title: 'Prayer Reminders', text: 'Schedule recurring reminders so you never miss a moment of prayer.' },
@@ -134,14 +133,14 @@ export default function WebLanding() {
             <TouchableOpacity style={styles.storeBtn} onPress={() => openLink(APP_STORE_URL)} activeOpacity={0.85}>
               <Ionicons name="logo-apple" size={22} color="#fff" />
               <View>
-                <Text style={styles.storeSmall}>Download on the</Text>
+                <Text style={styles.storeSmall}>{STORE_BADGE_LEAD}</Text>
                 <Text style={styles.storeStrong}>App Store</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity style={styles.storeBtnDark} onPress={() => openLink(PLAY_STORE_URL)} activeOpacity={0.85}>
               <Ionicons name="logo-google-playstore" size={22} color="#fff" />
               <View>
-                <Text style={styles.storeSmall}>Get it on</Text>
+                <Text style={styles.storeSmall}>{STORE_BADGE_LEAD}</Text>
                 <Text style={styles.storeStrong}>Google Play</Text>
               </View>
             </TouchableOpacity>

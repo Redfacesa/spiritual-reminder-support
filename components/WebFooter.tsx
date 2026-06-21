@@ -3,8 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, Linking } fr
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing } from '../constants/theme';
 
-const APP_STORE_URL = 'https://apps.apple.com/us/app/prayer-reminder/id6755526671';
-const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.prayer.reminder.app';
+import { APP_STORE_URL, PLAY_STORE_URL, ECOSYSTEM_SIBLING_APPS, REDFACE_HUB_URL, STORE_BADGE_LEAD } from '../constants/ecosystem';
 
 const LEGAL_LINKS: { label: string; href: string }[] = [
   { label: 'Privacy Policy', href: '/welcome/privacy.html' },
@@ -60,6 +59,15 @@ export default function WebFooter() {
             ))}
           </View>
 
+          <View style={styles.linkCol}>
+            <Text style={styles.colHeading}>Red Face ecosystem</Text>
+            {ECOSYSTEM_SIBLING_APPS.map((app) => (
+              <TouchableOpacity key={app.id} onPress={() => open(app.url)} activeOpacity={0.7}>
+                <Text style={styles.link}>{app.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
           {/* Contact */}
           <View style={styles.linkCol}>
             <Text style={styles.colHeading}>Contact</Text>
@@ -72,8 +80,8 @@ export default function WebFooter() {
             <TouchableOpacity onPress={() => open('tel:+27617780990')} activeOpacity={0.7}>
               <Text style={styles.link}>+27 61 778 0990</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => open('https://www.redface.in')} activeOpacity={0.7}>
-              <Text style={styles.link}>www.redface.in</Text>
+            <TouchableOpacity onPress={() => open(REDFACE_HUB_URL)} activeOpacity={0.7}>
+              <Text style={styles.link}>{REDFACE_HUB_URL.replace('https://', '')}</Text>
             </TouchableOpacity>
           </View>
         </View>

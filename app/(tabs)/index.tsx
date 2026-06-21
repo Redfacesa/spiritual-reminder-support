@@ -14,8 +14,7 @@ import WebFooter from '../../components/WebFooter';
 import { FAITH_TRADITIONS } from '../../constants/faithData';
 import { colors, radius, shadow, spacing } from '../../constants/theme';
 
-const APP_STORE_URL = 'https://apps.apple.com/us/app/prayer-reminder/id6755526671';
-const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.prayer.reminder.app';
+import { APP_STORE_URL, PLAY_STORE_URL, REDFACE_HUB_URL, STORE_BADGE_LEAD } from '../../constants/ecosystem';
 
 function greeting() {
   const h = new Date().getHours();
@@ -192,14 +191,14 @@ function WebHomeHero() {
             <TouchableOpacity style={styles.webPrimaryBtn} onPress={() => openLink(APP_STORE_URL)} activeOpacity={0.85}>
               <Ionicons name="logo-apple" size={20} color="#fff" />
               <View>
-                <Text style={styles.webStoreSmall}>Download on the</Text>
+                <Text style={styles.webStoreSmall}>{STORE_BADGE_LEAD}</Text>
                 <Text style={styles.webStoreStrong}>App Store</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity style={styles.webDarkBtn} onPress={() => openLink(PLAY_STORE_URL)} activeOpacity={0.85}>
               <Ionicons name="logo-google-playstore" size={20} color="#fff" />
               <View>
-                <Text style={styles.webStoreSmall}>Get it on</Text>
+                <Text style={styles.webStoreSmall}>{STORE_BADGE_LEAD}</Text>
                 <Text style={styles.webStoreStrong}>Google Play</Text>
               </View>
             </TouchableOpacity>
@@ -209,7 +208,7 @@ function WebHomeHero() {
             <Image source={{ uri: '/welcome/assets/redface-logo.png' }} style={styles.redFaceLogo} />
             <View>
               <Text style={styles.redFaceText}>Built by Red Face (Pty) Ltd</Text>
-              <Text style={styles.redFaceLink}>www.redface.in</Text>
+              <Text style={styles.redFaceLink}>{REDFACE_HUB_URL.replace('https://', '')}</Text>
             </View>
           </View>
         </View>
