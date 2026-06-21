@@ -7,6 +7,18 @@ Prayer Reminder has two runtime parts:
 
 Do not mix public web variables and private server variables.
 
+## Vercel projects (important)
+
+This repo is connected to **two** Vercel projects in the same team:
+
+| Project | Domain |
+|---------|--------|
+| `spiritual-reminder-support-j6oo` | **prayerreminder.site** (production) |
+| `spiritual-reminder-support` | `spiritual-reminder-support.vercel.app` |
+
+Always set environment variables on **`spiritual-reminder-support-j6oo`** — that is the live site.
+If GitHub deploys fail on the duplicate project, ignore or disconnect it from the repo in Vercel → Project Settings → Git.
+
 ## Vercel Web App Variables
 
 Add these in **Vercel -> Project -> Settings -> Environment Variables** for the project serving `prayerreminder.site`.
