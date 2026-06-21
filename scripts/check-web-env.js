@@ -18,6 +18,11 @@ function loadDotEnv() {
 
 loadDotEnv();
 
+// Vercel web builds should always talk to same-domain API routes unless overridden.
+if (process.env.VERCEL && !process.env.EXPO_PUBLIC_PROXY_URL) {
+  process.env.EXPO_PUBLIC_PROXY_URL = '/api';
+}
+
 const required = [
   'EXPO_PUBLIC_SUPABASE_URL',
   'EXPO_PUBLIC_SUPABASE_ANON_KEY',
