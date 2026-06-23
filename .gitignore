@@ -34,3 +34,4 @@ server/.env.*
 !server/.env.example
 .env_prod
 server/.env_prod
+.vercel
